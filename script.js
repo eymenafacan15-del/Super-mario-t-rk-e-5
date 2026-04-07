@@ -20,21 +20,20 @@ const platforms = [];
 const enemies = [];
 const keys = { w: false, a: false, s: false, d: false };
 
-// --- BÖLÜM SONU (BAYRAK) ---
-const finishLineX = 8000; // Bayrak 8000. pikselde
+const finishLineX = 9000; 
 
-// --- TÜRKÇE SORULARI ---
+// --- TÜRKÇE: SORU İŞARETİ VE NOKTALAMA SORULARI ---
 const questions = [
-    { q: "Cümlenin sonuna ne konur?", options: ["Nokta (.)", "Virgül", "Soru İşareti", "Ünlem"], a: 0 },
-    { q: "Soru sorarken hangisini kullanırız?", options: ["Nokta", "Soru İşareti (?)", "Ünlem", "Virgül"], a: 1 },
-    { q: "Korku ve heyecan işareti nedir?", options: ["Virgül", "Nokta", "Ünlem (!)", "İki Nokta"], a: 2 },
-    { q: "Özel isimlere gelen ekleri ne ayırır?", options: ["Nokta", "Kesme İşareti (')", "Virgül", "Ünlem"], a: 1 }
+    { q: "Soru soran cümlelerin sonuna ne konur?", options: ["Nokta", "Soru İşareti (?)", "Ünlem", "Virgül"], a: 1 },
+    { q: "Hangisi bir soru cümlesidir?", options: ["Eve geldim.", "Okul bitti.", "Neden gelmedin?", "Koşarak gitti."], a: 2 },
+    { q: "'Kaç yaşındasın' cümlesinin sonuna ne gelmelidir?", options: ["?", "!", ".", ","], a: 0 },
+    { q: "Bilinmeyen yer veya tarihlerin yerine ne konur?", options: ["Nokta", "Ünlem", "Soru İşareti (?)", "Virgül"], a: 2 }
 ];
 
 const moveButtons = [
-    { id: 'a', x: 20, y: 0, w: 80, h: 80, label: "SOL (A)" },
-    { id: 'd', x: 120, y: 0, w: 80, h: 80, label: "SAĞ (D)" },
-    { id: 'w', x: 0, y: 0, w: 100, h: 100, label: "ZIPLA (W)" }
+    { id: 'a', x: 20, y: 0, w: 85, h: 85, label: "A (SOL)" },
+    { id: 'd', x: 125, y: 0, w: 85, h: 85, label: "D (SAĞ)" },
+    { id: 'w', x: 0, y: 0, w: 100, h: 100, label: "W (ZIP)" }
 ];
 
 let optionButtons = [];
@@ -42,32 +41,26 @@ let optionButtons = [];
 function init() {
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
-    moveButtons[0].y = h - 100;
-    moveButtons[1].y = h - 100;
-    moveButtons[2].x = w - 120;
-    moveButtons[2].y = h - 120;
+    moveButtons[0].y = h - 110;
+    moveButtons[1].y = h - 110;
+    moveButtons[2].x = w - 130;
+    moveButtons[2].y = h - 130;
 
     platforms.length = 0; enemies.length = 0;
-    
-    // ANA ZEMİN
-    platforms.push({ x: 0, y: h - 100, w: 10000, h: 100, type: 'ground' });
+    platforms.push({ x: 0, y: h - 100, w: 12000, h: 100, type: 'ground' });
 
-    // --- HARİTA TASARIMI: BORULAR VE ENGELLER ---
-    for(let i = 1; i < 20; i++) {
-        let px = i * 400;
-        
-        // 1. Havada duran tuğla bloklar
-        if(i % 2 === 0) {
-            platforms.push({ x: px, y: h - 280, w: 150, h: 40, type: 'block' });
-        }
+    for(let i = 1; i < 25; i++) {
+        let px = i * 650;
+        // Engeller ve Borular
+        if(i % 3 === 0) platforms.push({ x: px, y: h - 280, w: 150, h: 40, type: 'block' });
+        if(i % 5 === 0) platforms.push({ x: px + 200, y: h - 180, w: 70, h: 80, type: 'pipe' });
 
-        // 2. Yeşil Borular (Engel)
-        if(i % 4 === 0) {
-            platforms.push({ x: px + 200, y: h - 180, w: 70, h: 80, type: 'pipe' });
-        }
-
-        // 3. Canavarlar
-        enemies.push({ x: px + 100, y: h - 155, w: 55, h: 55, hasQuestion: true, dead: false });
+        // SALDIRGAN CANAVARLAR
+        enemies.push({ 
+            x: px + 400, y: h - 155, w: 55, h: 55, 
+            vx: -3, hasQuestion: true, dead: false, 
+            range: 400, startX: px + 400 
+        });
     }
 }
 
@@ -77,7 +70,7 @@ function handleInteraction(tx, ty, isDown) {
         if (!isDown) return;
         optionButtons.forEach((btn, index) => {
             if (tx > btn.x && tx < btn.x + btn.w && ty > btn.y && ty < btn.y + btn.h) {
-                if (index === currentQuestion.a) score += 500; else lives--;
+                if (index === currentQuestion.a) { score += 500; } else { lives--; }
                 isPaused = false; currentQuestion = null;
                 if(lives <= 0) location.reload();
             }
@@ -102,8 +95,8 @@ window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys.has
 function update() {
     if(isPaused || isGameOver) { render(); requestAnimationFrame(update); return; }
 
-    if(keys.a) { p.vx -= 1.5; p.dir = -1; }
-    if(keys.d) { p.vx += 1.5; p.dir = 1; }
+    if(keys.a) { p.vx -= 1.4; p.dir = -1; }
+    if(keys.d) { p.vx += 1.4; p.dir = 1; }
     if(keys.w && p.ground) { p.vy = -23; p.ground = false; }
 
     p.vx *= friction; p.vy += gravity;
@@ -112,29 +105,34 @@ function update() {
 
     p.ground = false;
     platforms.forEach(plat => {
-        // Üzerine Basma (Platform/Boru/Zemin)
         if(p.x < plat.x + plat.w && p.x + p.w > plat.x && p.y + p.h > plat.y && p.y + p.h < plat.y + 30 && p.vy >= 0) {
             p.y = plat.y - p.h; p.vy = 0; p.ground = true;
-        }
-        // Yanlardan Çarpma (Engel olma durumu)
-        if(plat.type !== 'ground' && p.y + p.h > plat.y + 10 && p.y < plat.y + plat.h - 10) {
-            if(p.x + p.w > plat.x && p.x < plat.x + 10) { p.x = plat.x - p.w; p.vx = 0; }
-            if(p.x < plat.x + plat.w && p.x > plat.x + plat.w - 10) { p.x = plat.x + plat.w; p.vx = 0; }
         }
     });
 
     enemies.forEach(e => {
-        if(!e.dead && Math.abs(p.x - e.x) < 50 && Math.abs(p.y - e.y) < 50 && e.hasQuestion) {
-            isPaused = true; e.hasQuestion = false;
+        if(e.dead) return;
+        
+        // CANAVAR SALDIRISI: Mario yakındaysa üzerine koşar
+        let dist = Math.abs(p.x - e.x);
+        if(dist < 500) {
+            e.vx = (p.x < e.x) ? -4.5 : 4.5; 
+        }
+        e.x += e.vx;
+
+        // Çarpışma ve Soru
+        if(dist < 50 && Math.abs(p.y - e.y) < 50) {
+            isPaused = true;
             currentQuestion = questions[Math.floor(Math.random() * questions.length)];
             optionButtons = currentQuestion.options.map((opt, i) => ({
-                x: w/2 - 150, y: h/2 - 80 + (i * 70), w: 300, h: 55, label: opt
+                x: w/2 - 160, y: h/2 - 70 + (i * 75), w: 320, h: 60, label: opt
             }));
+            e.dead = true; // Soru çıktıktan sonra canavar gider
         }
     });
 
-    // BAYRAĞA ULAŞMA (Harita Sonu)
-    if(p.x > finishLineX) { isGameOver = true; score += 1000; }
+    if(p.x > finishLineX) isGameOver = true;
+    if(p.y > h + 100) reset();
 
     render();
     requestAnimationFrame(update);
@@ -143,54 +141,58 @@ function update() {
 function render() {
     ctx.fillStyle = '#5c94fc'; ctx.fillRect(0, 0, w, h);
     
-    // Engeller, Borular ve Zemin
     platforms.forEach(plat => {
         if(plat.type === 'pipe') ctx.fillStyle = '#2ecc71'; 
         else if(plat.type === 'block') ctx.fillStyle = '#e67e22';
         else ctx.fillStyle = '#8B4513';
-        
         ctx.fillRect(plat.x - camX, plat.y, plat.w, plat.h);
-        ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(plat.x - camX, plat.y, plat.w, 5);
     });
 
-    // Bayrak Direği
+    // Bayrak
     ctx.fillStyle = 'white'; ctx.fillRect(finishLineX - camX, h - 500, 10, 400);
     ctx.fillStyle = 'red'; ctx.fillRect(finishLineX - camX, h - 500, 60, 40);
 
-    enemies.forEach(e => { if(!e.dead) ctx.drawImage(img.goomba, e.x - camX, e.y, e.w, e.h); });
+    // Canavarlar ve Soru İşaretleri
+    enemies.forEach(e => { 
+        if(!e.dead) {
+            ctx.drawImage(img.goomba, e.x - camX, e.y, e.w, e.h);
+            ctx.fillStyle = "yellow"; ctx.font = "bold 25px Arial";
+            ctx.fillText("?", e.x - camX + 20, e.y - 10);
+        }
+    });
 
     ctx.save();
     if(p.dir === -1) { ctx.translate(p.x - camX + p.w, p.y); ctx.scale(-1, 1); ctx.drawImage(img.mario, 0, 0, p.w, p.h); }
     else { ctx.drawImage(img.mario, p.x - camX, p.y, p.w, p.h); }
     ctx.restore();
 
-    // Kontroller
+    // Kontrol Tuşları
     ctx.globalAlpha = 0.5;
     moveButtons.forEach(btn => {
-        ctx.fillStyle = "black"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10); ctx.fill();
-        ctx.fillStyle = "white"; ctx.font = "bold 16px Arial"; ctx.textAlign="center";
+        ctx.fillStyle = "black"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 12); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "bold 18px Arial"; ctx.textAlign="center";
         ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + btn.h/1.6);
     });
 
-    // Soru Paneli
+    // Soru Ekranı
     if (isPaused && currentQuestion) {
         ctx.globalAlpha = 1.0;
-        ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.textAlign = "center";
-        ctx.fillText(currentQuestion.q, w/2, h/2 - 140);
+        ctx.fillStyle = "rgba(0,0,0,0.95)"; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "yellow"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
+        ctx.fillText("??? SORU İŞARETİ ???", w/2, h/2 - 180);
+        ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
+        ctx.fillText(currentQuestion.q, w/2, h/2 - 110);
         optionButtons.forEach((btn, i) => {
             ctx.fillStyle = "#3498db"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10); ctx.fill();
-            ctx.fillStyle = "white"; ctx.font = "bold 18px Arial";
-            ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + 35);
+            ctx.fillStyle = "white"; ctx.font = "bold 19px Arial";
+            ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + 38);
         });
     }
 
-    // Oyun Bitti (Bayrak)
     if(isGameOver) {
-        ctx.globalAlpha = 0.8; ctx.fillStyle = "green"; ctx.fillRect(0, 0, w, h);
-        ctx.globalAlpha = 1.0; ctx.fillStyle = "white"; ctx.font = "bold 50px Arial"; ctx.textAlign="center";
-        ctx.fillText("BÖLÜM BİTTİ! TEBRİKLER!", w/2, h/2);
-        ctx.font = "20px Arial"; ctx.fillText("Yeniden başlamak için ekrana tıkla", w/2, h/2 + 60);
+        ctx.fillStyle = "rgba(0,200,0,0.9)"; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "white"; ctx.font = "bold 50px Arial"; ctx.textAlign="center";
+        ctx.fillText("BÖLÜMÜ TAMAMLADIN!", w/2, h/2);
         canvas.onclick = () => location.reload();
     }
 
@@ -199,4 +201,5 @@ function render() {
     ctx.fillText(`CAN: ${lives} | PUAN: ${score}`, 20, 40);
 }
 
+function reset() { lives--; p.x = 200; p.y = 100; if(lives <= 0) location.reload(); }
 init(); update();
