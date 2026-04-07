@@ -216,6 +216,11 @@ function render() {
         canvas.onclick = () => location.reload();
     }
 
+    ctx.globalAlpha = 1.0; ctx.textAlign = "left";
+    ctx.fillStyle = "yellow"; ctx.font = "bold 24px Arial";
+    ctx.fillText(`CAN: ${lives} | PUAN: ${score}`, 20, 40);
+}
+
 function reset() { lives--; p.x = 200; p.y = 100; if(lives <= 0) location.reload(); }
 init(); update();
 window.onresize = init;
