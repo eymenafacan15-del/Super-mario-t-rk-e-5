@@ -20,14 +20,14 @@ const platforms = [];
 const enemies = [];
 const keys = { w: false, a: false, s: false, d: false };
 
-const finishLineX = 8500; // Bayrak mesafesi
+const finishLineX = 9000; // Harita sonu bayrak mesafesi
 
-// --- SORU İŞARETİ ODAKLI SORULAR ---
+// --- TÜRKÇE SORULARI (SORU İŞARETİ ODAKLI) ---
 const questions = [
-    { q: "Hangi cümlenin sonuna '?' gelmelidir?", options: ["Bugün çok yorgunum", "Nereye gidiyorsun", "Kitabı okudum", "Hava çok güzel"], a: 1 },
-    { q: "Soru eki olan '-mı/-mi' nasıl yazılır?", options: ["Bitşik yazılır", "Kelimeye eklenir", "Her zaman ayrı yazılır", "Yazılmaz"], a: 2 },
-    { q: "Hangisi bir soru cümlesidir?", options: ["Eyvah, düştüm!", "Dışarı çıkalım mı?", "Okula gittim.", "Seni seviyorum."], a: 1 },
-    { q: "Bilinmeyen tarihleri belirtmek için ne kullanılır?", options: ["Ünlem", "Nokta", "Soru İşareti (?)", "Virgül"], a: 2 }
+    { q: "Soru bildiren cümlelerin sonuna ne konur?", options: ["Nokta (.)", "Soru İşareti (?)", "Ünlem (!)", "Virgül (,)"], a: 1 },
+    { q: "Hangisi bir soru cümlesidir?", options: ["Ödevimi yaptım.", "Yarın gelecek misin?", "Dışarıda kar yağıyor.", "Kitap okuyorum."], a: 1 },
+    { q: "Soru eki olan '-mı, -mi' nasıl yazılır?", options: ["Kelimeye bitişik", "Her zaman ayrı", "Bazen bitişik", "Hiç yazılmaz"], a: 1 },
+    { q: "Nezaman, Nasıl, Neden kelimeleri ne bildirir?", options: ["Korku", "Soru", "Bitiş", "Heyecan"], a: 1 }
 ];
 
 const moveButtons = [
@@ -41,28 +41,37 @@ let optionButtons = [];
 function init() {
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
+    
+    // Buton konumlarını ekrana göre ayarla
     moveButtons[0].y = h - 110;
     moveButtons[1].y = h - 110;
     moveButtons[2].x = w - 140;
     moveButtons[2].y = h - 140;
 
     platforms.length = 0; enemies.length = 0;
-    platforms.push({ x: 0, y: h - 100, w: 10000, h: 100, type: 'ground' });
+    
+    // Zemin
+    platforms.push({ x: 0, y: h - 100, w: 12000, h: 100, type: 'ground' });
 
-    for(let i = 1; i < 20; i++) {
-        let px = i * 600;
-        // Engeller (Borular ve Bloklar)
-        if(i % 3 === 0) platforms.push({ x: px, y: h - 250, w: 120, h: 40, type: 'block' });
+    // Engeller, Borular ve Canavarları Haritaya Diz
+    for(let i = 1; i < 25; i++) {
+        let px = i * 550;
+        
+        // Bloklar (Tuğlalar)
+        if(i % 2 === 0) platforms.push({ x: px, y: h - 280, w: 150, h: 40, type: 'block' });
+        
+        // Borular
         if(i % 5 === 0) platforms.push({ x: px + 200, y: h - 180, w: 80, h: 80, type: 'pipe' });
 
-        // SALDIRGAN CANAVARLAR
+        // SALDIRGAN CANAVARLAR (Goombalar)
         enemies.push({ 
             x: px + 400, y: h - 155, w: 55, h: 55, 
-            vx: -2, hasQuestion: true, dead: false 
+            vx: -2, dead: false 
         });
     }
 }
 
+// --- KONTROLLER (DOKUNMATİK VE FARE) ---
 function handleInteraction(tx, ty, isDown) {
     if(isGameOver) return;
     if (isPaused && currentQuestion) {
@@ -88,12 +97,14 @@ window.addEventListener('touchstart', e => {
 }, { passive: false });
 window.addEventListener('touchend', () => { keys.a = keys.d = keys.w = false; });
 
+// Klavye Desteği
 window.addEventListener('keydown', e => { if(!isGameOver) { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; }});
 window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
 
 function update() {
     if(isPaused || isGameOver) { render(); requestAnimationFrame(update); return; }
 
+    // Hareket Fiziği
     if(keys.a) { p.vx -= 1.4; p.dir = -1; }
     if(keys.d) { p.vx += 1.4; p.dir = 1; }
     if(keys.w && p.ground) { p.vy = -23; p.ground = false; }
@@ -102,31 +113,37 @@ function update() {
     p.x += p.vx; p.y += p.vy;
     camX += (p.x - camX - w/3) * 0.1;
 
+    // Engel ve Boru Çarpışmaları
     p.ground = false;
     platforms.forEach(plat => {
         if(p.x < plat.x + plat.w && p.x + p.w > plat.x && p.y + p.h > plat.y && p.y + p.h < plat.y + 30 && p.vy >= 0) {
             p.y = plat.y - p.h; p.vy = 0; p.ground = true;
         }
+        // Yanlardan çarpma (Borular için)
+        if(plat.type !== 'ground' && p.y + p.h > plat.y + 10) {
+            if(p.x + p.w > plat.x && p.x < plat.x + 10) { p.x = plat.x - p.w; p.vx = 0; }
+            if(p.x < plat.x + plat.w && p.x > plat.x + plat.w - 10) { p.x = plat.x + plat.w; p.vx = 0; }
+        }
     });
 
+    // Canavar Saldırı Yapay Zekası
     enemies.forEach(e => {
         if(e.dead) return;
         
-        // --- CANAVAR ZEKA (SALDIRI) ---
         let dist = p.x - e.x;
-        if(Math.abs(dist) < 600) { // Mario yakındaysa ona doğru koş
-            e.vx = dist > 0 ? 4 : -4;
+        if(Math.abs(dist) < 550) { // Mario'yu 550 pikselden fark eder
+            e.vx = dist > 0 ? 4.5 : -4.5; // Mario'nun üzerine koş
         }
         e.x += e.vx;
 
-        // Çarpışma ve Soru Ekranı
-        if(Math.abs(p.x - e.x) < 50 && Math.abs(p.y - e.y) < 50) {
+        // Çarpışma: Canavar değerse soru çıkar
+        if(Math.abs(p.x - e.x) < 45 && Math.abs(p.y - e.y) < 50) {
             isPaused = true;
             currentQuestion = questions[Math.floor(Math.random() * questions.length)];
             optionButtons = currentQuestion.options.map((opt, i) => ({
                 x: w/2 - 160, y: h/2 - 80 + (i * 70), w: 320, h: 60, label: opt
             }));
-            e.dead = true; // Soru çözülünce canavar kaybolur
+            e.dead = true; 
         }
     });
 
@@ -138,8 +155,9 @@ function update() {
 }
 
 function render() {
-    ctx.fillStyle = '#5c94fc'; ctx.fillRect(0, 0, w, h); // Arkaplan
+    ctx.fillStyle = '#5c94fc'; ctx.fillRect(0, 0, w, h); // Gökyüzü
     
+    // Harita Elemanlarını Çiz
     platforms.forEach(plat => {
         if(plat.type === 'pipe') ctx.fillStyle = '#2ecc71'; 
         else if(plat.type === 'block') ctx.fillStyle = '#e67e22';
@@ -147,11 +165,11 @@ function render() {
         ctx.fillRect(plat.x - camX, plat.y, plat.w, plat.h);
     });
 
-    // Bayrak
+    // Bayrak Direği
     ctx.fillStyle = 'white'; ctx.fillRect(finishLineX - camX, h - 500, 10, 400);
     ctx.fillStyle = 'red'; ctx.fillRect(finishLineX - camX, h - 500, 60, 40);
 
-    // Canavarlar ve üzerindeki "?" işaretleri
+    // Canavarlar ve "?" İşaretleri
     enemies.forEach(e => { 
         if(!e.dead) {
             ctx.drawImage(img.goomba, e.x - camX, e.y, e.w, e.h);
@@ -160,46 +178,43 @@ function render() {
         }
     });
 
-    // Mario
+    // Mario Çizimi (Yöne göre çevir)
     ctx.save();
     if(p.dir === -1) { ctx.translate(p.x - camX + p.w, p.y); ctx.scale(-1, 1); ctx.drawImage(img.mario, 0, 0, p.w, p.h); }
     else { ctx.drawImage(img.mario, p.x - camX, p.y, p.w, p.h); }
     ctx.restore();
 
-    // Kontrol Tuşları
+    // Akıllı Tahta Butonları
     ctx.globalAlpha = 0.5;
     moveButtons.forEach(btn => {
-        ctx.fillStyle = "black"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10); ctx.fill();
+        ctx.fillStyle = "black"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 12); ctx.fill();
         ctx.fillStyle = "white"; ctx.font = "bold 18px Arial"; ctx.textAlign="center";
         ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + btn.h/1.6);
     });
 
-    // --- SORU EKRANI ---
+    // Soru Ekranı (Panel)
     if (isPaused && currentQuestion) {
         ctx.globalAlpha = 1.0;
         ctx.fillStyle = "rgba(0,0,0,0.95)"; ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "yellow"; ctx.font = "bold 45px Arial"; ctx.textAlign = "center";
-        ctx.fillText("??? SORU İŞARETİ PANİK ???", w/2, h/2 - 160);
+        ctx.fillStyle = "yellow"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
+        ctx.fillText("SORU İŞARETİ KUTUSU (?)", w/2, h/2 - 180);
         ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
-        ctx.fillText(currentQuestion.q, w/2, h/2 - 100);
+        ctx.fillText(currentQuestion.q, w/2, h/2 - 110);
         optionButtons.forEach((btn, i) => {
             ctx.fillStyle = "#3498db"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10); ctx.fill();
-            ctx.fillStyle = "white"; ctx.font = "bold 20px Arial";
+            ctx.fillStyle = "white"; ctx.font = "bold 19px Arial";
             ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + 38);
         });
     }
 
+    // Kazanma Ekranı
     if(isGameOver) {
-        ctx.fillStyle = "rgba(0,150,0,0.9)"; ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "white"; ctx.font = "bold 40px Arial"; ctx.textAlign="center";
-        ctx.fillText("BÖLÜMÜ GEÇTİN! HARİKASIN!", w/2, h/2);
+        ctx.globalAlpha = 1.0; ctx.fillStyle = "rgba(0,180,0,0.9)"; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "white"; ctx.font = "bold 50px Arial"; ctx.textAlign="center";
+        ctx.fillText("HARİKA! BAYRAĞA ULAŞTIN!", w/2, h/2);
+        ctx.font = "25px Arial"; ctx.fillText("Yeniden oynamak için tıkla.", w/2, h/2 + 70);
         canvas.onclick = () => location.reload();
     }
-
-    ctx.globalAlpha = 1.0; ctx.textAlign = "left";
-    ctx.fillStyle = "yellow"; ctx.font = "bold 22px Arial";
-    ctx.fillText(`CAN: ${lives} | SKOR: ${score}`, 20, 40);
-}
 
 function reset() { lives--; p.x = 200; p.y = 100; if(lives <= 0) location.reload(); }
 init(); update();
