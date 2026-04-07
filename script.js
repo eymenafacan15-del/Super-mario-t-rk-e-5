@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 
 let w, h, camX = 0, score = 0, lives = 3, frame = 0;
 let isPaused = false; 
-let currentQuestion = null; // Aktif soruyu tutar
+let currentQuestion = null; 
 const gravity = 0.8;
 const friction = 0.88;
 
@@ -25,21 +25,21 @@ const keys = { w: false, a: false, s: false, d: false };
 
 // --- 5. SINIF TÜRKÇE: ŞIKLI SORULAR ---
 const questions = [
-    { q: "Tamamlanmış cümlelerin sonuna hangisi konur?", options: ["Nokta", "Virgül", "Ünlem", "Soru İşareti"], a: 0 },
-    { q: "Eş görevli kelimeleri ayırmak için hangisi kullanılır?", options: ["Nokta", "Virgül", "İki Nokta", "Üç Nokta"], a: 1 },
-    { q: "Heyecan, korku bildiren cümlelerin sonuna ne konur?", options: ["Nokta", "Virgül", "Ünlem", "Soru İşareti"], a: 2 },
-    { q: "Özel adlara gelen ekleri hangisiyle ayırırız?", options: ["Virgül", "Nokta", "Kesme İşareti", "Ünlem"], a: 2 },
-    { q: "Soru anlamı taşıyan cümlelerin sonuna ne gelir?", options: ["Soru İşareti", "Nokta", "Ünlem", "İki Nokta"], a: 0 }
+    { q: "Özel adlara getirilen ekleri ayırmak için ne kullanılır?", options: ["Nokta", "Virgül", "Kesme İşareti", "Ünlem"], a: 2 },
+    { q: "Cümle sonuna nokta konan yere '?' gelirse o cümle nedir?", options: ["Ünlem", "Soru", "Devrik", "Eksiltili"], a: 1 },
+    { q: "Anlatım olarak tamamlanmamış cümlelerin sonuna ne konur?", options: ["Nokta", "Üç Nokta", "İki Nokta", "Virgül"], a: 1 },
+    { q: "Hitap kelimelerinden (Sevgili Anneciğim) sonra ne konur?", options: ["Soru İşareti", "Nokta", "Ünlem", "Virgül"], a: 3 },
+    { q: "Korku, acı ve şaşkınlık belirten cümlenin sonu hangisidir?", options: ["!", "?", ".", ":"], a: 0 }
 ];
 
 // --- BUTONLAR ---
 const touchButtons = [
-    { id: 'a', x: 30, y: 0, w: 90, h: 90, label: 'A' },
-    { id: 'd', x: 140, y: 0, w: 90, h: 90, label: 'D' },
-    { id: 'w', x: 0, y: 0, w: 110, h: 110, label: 'W' }
+    { id: 'a', x: 30, y: 0, w: 90, h: 90, label: '◀' },
+    { id: 'd', x: 140, y: 0, w: 90, h: 90, label: '▶' },
+    { id: 'w', x: 0, y: 0, w: 110, h: 110, label: 'Zıpla' }
 ];
 
-// Soru Şıkları Butonları (Ekranın ortasında çıkacak)
+// Soru Şıkları Butonları
 const optionButtons = [];
 
 function init() {
@@ -53,53 +53,53 @@ function init() {
     platforms.length = 0; enemies.length = 0;
     platforms.push({ x: 0, y: h - 100, w: 40000, h: 100, color: '#8B4513' });
 
-    for(let i = 1; i < 60; i++) {
-        let px = i * 450 + Math.random() * 200;
-        let ey = h - 155; 
+    for(let i = 1; i < 40; i++) {
+        let px = i * 600 + Math.random() * 300;
         enemies.push({
-            x: px, y: ey, w: 55, h: 55,
-            type: (i % 6 === 0) ? 'hammer_bro' : 'goomba',
-            vx: (2 + Math.random() * 2) * (Math.random() > 0.5 ? 1 : -1),
-            vy: 0, hasQuestion: Math.random() > 0.6,
-            dead: false, shootTimer: 0
+            x: px, y: h - 155, w: 55, h: 55,
+            type: (i % 5 === 0) ? 'hammer_bro' : 'goomba',
+            vx: -3.5, vy: 0, hasQuestion: true, dead: false
         });
     }
 }
 
-// --- TIKLAMA VE DOKUNMA KONTROLÜ ---
-function checkClick(tx, ty) {
+// --- DOKUNMATİK VE TIKLAMA YÖNETİMİ ---
+function handlePress(tx, ty) {
     if (isPaused && currentQuestion) {
-        // Soru ekranındaki şıklara tıklama kontrolü
+        // Şık butonlarına tıklandı mı?
         optionButtons.forEach((btn, index) => {
             if (tx > btn.x && tx < btn.x + btn.w && ty > btn.y && ty < btn.y + btn.h) {
                 if (index === currentQuestion.a) {
-                    alert("DOĞRU! +500 Puan");
+                    alert("TEBRİKLER! Doğru Cevap.");
                     score += 500;
                 } else {
-                    alert("YANLIŞ! Can kaybettin.");
+                    alert("YANLIŞ! Bir canın gitti.");
                     lives--;
                 }
                 isPaused = false;
                 currentQuestion = null;
-                if(lives <= 0) location.reload();
+                if (lives <= 0) location.reload();
             }
         });
-        return;
+    } else {
+        // Hareket butonları
+        touchButtons.forEach(btn => {
+            if (tx > btn.x && tx < btn.x + btn.w && ty > btn.y && ty < btn.y + btn.h) {
+                keys[btn.id] = true;
+            }
+        });
     }
-    // Hareket tuşları kontrolü
-    touchButtons.forEach(btn => {
-        if (tx > btn.x && tx < btn.x + btn.w && ty > btn.y && ty < btn.y + btn.h) {
-            keys[btn.id] = true;
-        }
-    });
 }
 
-window.addEventListener('mousedown', e => checkClick(e.clientX, e.clientY));
+window.addEventListener('mousedown', e => handlePress(e.clientX, e.clientY));
 window.addEventListener('mouseup', () => { keys.a = keys.d = keys.w = false; });
-window.addEventListener('touchstart', e => { e.preventDefault(); Array.from(e.touches).forEach(t => checkClick(t.clientX, t.clientY)); }, { passive: false });
+window.addEventListener('touchstart', e => { 
+    e.preventDefault(); 
+    Array.from(e.touches).forEach(t => handlePress(t.clientX, t.clientY)); 
+}, { passive: false });
 window.addEventListener('touchend', () => { keys.a = keys.d = keys.w = false; });
 
-// Klavye
+// Klavye WASD
 window.addEventListener('keydown', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
 window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
 
@@ -108,13 +108,12 @@ function triggerQuestion(e) {
     e.hasQuestion = false;
     currentQuestion = questions[Math.floor(Math.random() * questions.length)];
     
-    // Şık butonlarını oluştur
     optionButtons.length = 0;
-    const bw = 300, bh = 50;
+    const bw = 350, bh = 60;
     currentQuestion.options.forEach((opt, i) => {
         optionButtons.push({
             x: w / 2 - bw / 2,
-            y: h / 2 - 50 + (i * 60),
+            y: h / 2 - 40 + (i * 75),
             w: bw, h: bh, label: opt
         });
     });
@@ -134,15 +133,14 @@ function update() {
 
     p.ground = false;
     platforms.forEach(plat => {
-        if(p.x < plat.x + plat.w && p.x + p.w > plat.x && 
-           p.y + p.h > plat.y && p.y + p.h < plat.y + plat.h + p.vy && p.vy >= 0) {
+        if(p.x < plat.x + plat.w && p.x + p.w > plat.x && p.y + p.h > plat.y && p.y + p.h < plat.y + 20 && p.vy >= 0) {
             p.y = plat.y - p.h; p.vy = 0; p.ground = true;
         }
     });
 
     enemies.forEach(e => {
         if(e.dead) return;
-        e.x += e.vx; 
+        e.x += (p.x < e.x) ? -3.5 : 3.5; // Agresif takip
         if(Math.abs(p.x - e.x) < 60 && e.hasQuestion) triggerQuestion(e);
         if(p.x < e.x + e.w && p.x + p.w > e.x && p.y < e.y + e.h && p.y + p.h > e.y) {
             if(p.vy > 5) { e.dead = true; p.vy = -15; score += 100; }
@@ -160,48 +158,57 @@ function render() {
     // Zemin
     platforms.forEach(plat => {
         ctx.fillStyle = plat.color; ctx.fillRect(plat.x - camX, plat.y, plat.w, plat.h);
+        ctx.fillStyle = 'green'; ctx.fillRect(plat.x - camX, plat.y, plat.w, 10);
     });
 
     // Canavarlar
     enemies.forEach(e => {
         if(e.dead) return;
-        if(e.hasQuestion) { ctx.font = "30px Arial"; ctx.fillText("❓", e.x - camX + 10, e.y - 10); }
+        if(e.hasQuestion) { ctx.font = "30px Arial"; ctx.fillText("❓", e.x - camX + 10, e.y - 15); }
         ctx.drawImage(e.type === 'hammer_bro' ? img.bro : img.goomba, e.x - camX, e.y, e.w, e.h);
     });
 
     // Mario
-    ctx.drawImage(img.mario, p.x - camX, p.y, p.w, p.h);
+    ctx.save();
+    if(p.dir === -1) { ctx.translate(p.x - camX + p.w, p.y); ctx.scale(-1, 1); ctx.drawImage(img.mario, 0, 0, p.w, p.h); }
+    else { ctx.drawImage(img.mario, p.x - camX, p.y, p.w, p.h); }
+    ctx.restore();
 
-    // Hareket Tuşları
+    // Kontrol Tuşları
     ctx.globalAlpha = 0.5;
     touchButtons.forEach(btn => {
-        ctx.fillStyle = "black"; ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-        ctx.fillStyle = "white"; ctx.font = "20px Arial"; ctx.fillText(btn.label, btn.x + 20, btn.y + 55);
+        ctx.fillStyle = "black"; ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 15); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+        ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + btn.h/1.6);
     });
 
-    // --- SORU PANELİ (Eğer oyun durduysa) ---
+    // --- SORU VE ŞIK PANELİ ---
     if (isPaused && currentQuestion) {
-        ctx.globalAlpha = 0.9;
+        ctx.globalAlpha = 0.95;
         ctx.fillStyle = "white";
-        ctx.fillRect(w / 2 - 250, h / 2 - 200, 500, 400); // Panel arka planı
+        ctx.beginPath(); ctx.roundRect(w/2 - 300, h/2 - 250, 600, 500, 20); ctx.fill(); // Arka Panel
         
         ctx.globalAlpha = 1.0;
-        ctx.fillStyle = "black";
-        ctx.font = "bold 20px Arial";
+        ctx.fillStyle = "#2c3e50";
+        ctx.font = "bold 22px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(currentQuestion.q, w / 2, h / 2 - 120);
+        
+        // Uzun soruları ikiye bölmek için basit bir mantık
+        let words = currentQuestion.q.split(" ");
+        ctx.fillText(words.slice(0, 5).join(" "), w/2, h/2 - 180);
+        ctx.fillText(words.slice(5).join(" "), w/2, h/2 - 150);
 
         optionButtons.forEach((btn, i) => {
-            ctx.fillStyle = "#2ecc71";
-            ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+            ctx.fillStyle = "#3498db";
+            ctx.beginPath(); ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10); ctx.fill();
             ctx.fillStyle = "white";
-            ctx.fillText(`${["A", "B", "C", "D"][i]}) ${btn.label}`, btn.x + btn.w / 2, btn.y + 32);
+            ctx.font = "bold 18px Arial";
+            ctx.fillText(`${["A", "B", "C", "D"][i]}) ${btn.label}`, btn.x + btn.w/2, btn.y + 38);
         });
-        ctx.textAlign = "left";
     }
 
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = "white"; ctx.font = "24px Arial";
+    ctx.globalAlpha = 1.0; ctx.textAlign = "left";
+    ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
     ctx.fillText(`Puan: ${score} | Can: ${lives}`, 20, 40);
 }
 
